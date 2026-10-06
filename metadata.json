@@ -1,0 +1,6 @@
+{
+  "name": "Flowy Web",
+  "description": "An open-source, local-first alternative to Notion and AppFlowy.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
