@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { AIProvider } from '@/lib/types';
 import { X, Sparkles, Key, Server, Cpu, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
@@ -16,6 +16,18 @@ export function AISettingsModal({ onClose }: { onClose: () => void }) {
   const [apiKey, setApiKey] = useState(aiSettings.apiKey || '');
   const [localEndpoint, setLocalEndpoint] = useState(aiSettings.localEndpoint || 'http://localhost:11434');
   const [testStatus, setTestStatus] = useState<{ loading: boolean; success?: boolean; message?: string }>({ loading: false });
+  const [envConfigured, setEnvConfigured] = useState<Partial<Record<AIProvider, boolean>>>({});
+
+  useEffect(() => {
+    fetch('/api/ai')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.configuredProviders) {
+          setEnvConfigured(data.configuredProviders);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [openRouterModels, setOpenRouterModels] = useState<{ id: string; name?: string }[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -222,17 +234,33 @@ export function AISettingsModal({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                {provider} API Key {provider === 'Google' && '(Optional, defaults to server secret)'}
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  {provider} API Key {envConfigured[provider] && '(Optional, defaults to .env)'}
+                </label>
+                {envConfigured[provider] && (
+                  <span className="inline-flex items-center space-x-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>{apiKey ? 'Overriding .env key' : 'Configured via .env'}</span>
+                  </span>
+                )}
+              </div>
               <input
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder={provider === 'Google' ? "Using default server Gemini key or custom key" : `Enter your ${provider} API Key`}
+                placeholder={
+                  envConfigured[provider]
+                    ? `Using server .env key (or enter a custom ${provider} key)`
+                    : `Enter your ${provider} API Key`
+                }
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-indigo-500 font-mono text-slate-800 dark:text-slate-200"
               />
-              <p className="text-[11px] text-slate-400 mt-1">API keys are stored securely in browser local storage and never logged.</p>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {envConfigured[provider] && !apiKey
+                  ? 'Leave blank to use your server .env key, or enter a key to override it in browser local storage.'
+                  : 'API keys are stored securely in browser local storage and never logged.'}
+              </p>
             </div>
           )}
 

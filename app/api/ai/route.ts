@@ -1,6 +1,16 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 
+export async function GET() {
+  return NextResponse.json({
+    configuredProviders: {
+      Google: Boolean(process.env.GEMINI_API_KEY),
+      OpenAI: Boolean(process.env.OPENAI_API_KEY),
+      OpenRouter: Boolean(process.env.OPENROUTER_API_KEY),
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { action, prompt, model, provider, messages, apiKey: clientApiKey } = await req.json();
@@ -26,7 +36,7 @@ export async function POST(req: NextRequest) {
       );
     } else {
       // Default to Gemini
-      apiKey = process.env.GEMINI_API_KEY;
+      apiKey = clientApiKey || process.env.GEMINI_API_KEY;
     }
 
     if (!apiKey && provider !== 'Local') {
