@@ -190,8 +190,8 @@ const TEMPLATES = [
   }
 ];
 
-export function TemplatesModal({ onClose }: { onClose: () => void }) {
-  const { createPage, updatePage } = useAppStore();
+export function TemplatesModal({ onClose, onTemplateApplied }: { onClose: () => void; onTemplateApplied?: (parentId: string) => void }) {
+  const { createPage, updatePage, setActivePage } = useAppStore();
 
   const handleApplyTemplate = (template: typeof TEMPLATES[0]) => {
     // Create parent workspace folder/document
@@ -211,6 +211,8 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
       }
     });
 
+    setActivePage(parentId);
+    onTemplateApplied?.(parentId);
     onClose();
   };
 

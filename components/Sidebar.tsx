@@ -155,7 +155,12 @@ export function Sidebar() {
         </div>
       </div>
 
-      {showTemplates && <TemplatesModal onClose={() => setShowTemplates(false)} />}
+      {showTemplates && (
+        <TemplatesModal
+          onClose={() => setShowTemplates(false)}
+          onTemplateApplied={(parentId) => setExpanded(prev => ({ ...prev, [parentId]: true }))}
+        />
+      )}
     </div>
   );
 }

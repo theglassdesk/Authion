@@ -16,11 +16,23 @@ export function AISettingsModal({ onClose }: { onClose: () => void }) {
   const [apiKey, setApiKey] = useState(aiSettings.apiKey || '');
   const [localEndpoint, setLocalEndpoint] = useState(aiSettings.localEndpoint || 'http://localhost:11434');
   const [testStatus, setTestStatus] = useState<{ loading: boolean; success?: boolean; message?: string }>({ loading: false });
+  const [openRouterModels, setOpenRouterModels] = useState<{ id: string; name?: string }[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const cached = localStorage.getItem('authion_openrouter_models');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const providerModels: Record<AIProvider, string[]> = {
     Google: ['gemini-2.5-flash', 'gemini-2.5-pro'],
     OpenAI: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo'],
-    OpenRouter: ['anthropic/claude-3.5-sonnet', 'openai/gpt-4o', 'meta-llama/llama-3.1-70b-instruct', 'deepseek/deepseek-r1'],
+    OpenRouter:
+      openRouterModels.length > 0
+        ? openRouterModels.map((m) => m.id)
+        : ['anthropic/claude-sonnet-4', 'openai/gpt-4o', 'google/gemini-2.5-flash', 'deepseek/deepseek-r1'],
     Local: ['llama3', 'mistral', 'qwen2.5', 'phi3', 'custom'],
   };
 
@@ -49,6 +61,36 @@ export function AISettingsModal({ onClose }: { onClose: () => void }) {
           setTestStatus({ loading: false, success: true, message: 'Connected to local LLM server!' });
         } else {
           setTestStatus({ loading: false, success: false, message: `Could not reach ${localEndpoint}. Is Ollama running with OLLAMA_ORIGINS=*?` });
+        }
+      } else if (provider === 'OpenRouter') {
+        const res = await fetch('/api/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'listModels',
+            provider: 'OpenRouter',
+            apiKey: apiKey || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.models) && data.models.length > 0) {
+          setOpenRouterModels(data.models);
+          try {
+            localStorage.setItem('authion_openrouter_models', JSON.stringify(data.models));
+          } catch {
+            // Ignore storage quota errors
+          }
+          const isCurrentValid = data.models.some((m: { id: string }) => m.id === model);
+          if (!isCurrentValid) {
+            setModel(data.models[0].id);
+          }
+          setTestStatus({
+            loading: false,
+            success: true,
+            message: `Connected! Loaded ${data.models.length} OpenRouter models (newest first).`,
+          });
+        } else {
+          setTestStatus({ loading: false, success: false, message: data.error || 'Connection test failed.' });
         }
       } else {
         const res = await fetch('/api/ai', {

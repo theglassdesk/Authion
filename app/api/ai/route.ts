@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, model, provider, messages, apiKey: clientApiKey } = await req.json();
+    const { action, prompt, model, provider, messages, apiKey: clientApiKey } = await req.json();
 
     // Determine the actual API key to use
     let apiKey = clientApiKey;
@@ -31,6 +31,35 @@ export async function POST(req: NextRequest) {
 
     if (!apiKey && provider !== 'Local') {
       return NextResponse.json({ error: `API Key for ${provider || 'Google'} is missing.` }, { status: 401 });
+    }
+
+    if (action === 'listModels' && provider === 'OpenRouter') {
+      const keyRes = await fetch('https://openrouter.ai/api/v1/auth/key', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      if (!keyRes.ok) {
+        const keyErr = await keyRes.json().catch(() => ({}));
+        throw new Error(keyErr.error?.message || 'Invalid OpenRouter API key');
+      }
+
+      const modelsRes = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      const modelsData = await modelsRes.json();
+      if (!modelsRes.ok) {
+        throw new Error(modelsData.error?.message || 'Failed to fetch OpenRouter models');
+      }
+
+      const sortedModels = (modelsData.data || [])
+        .slice()
+        .sort((a: { created?: number }, b: { created?: number }) => (b.created ?? 0) - (a.created ?? 0))
+        .map((m: { id: string; name?: string; created?: number }) => ({
+          id: m.id,
+          name: m.name || m.id,
+          created: m.created,
+        }));
+
+      return NextResponse.json({ models: sortedModels });
     }
 
     // Since we support multiple providers, we'll route dynamically.

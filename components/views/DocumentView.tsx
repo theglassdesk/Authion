@@ -471,8 +471,12 @@ export function DocumentView({ page }: { page: Page }) {
           </div>
 
           {aiNotification && (
-            <div className="mt-2 text-xs px-2 py-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 rounded border border-green-200 dark:border-green-800 flex items-center space-x-1.5">
-              <Check className="w-3.5 h-3.5" />
+            <div className={`mt-2 text-xs px-2 py-1 rounded border flex items-center space-x-1.5 ${
+              aiNotification.startsWith('Error:')
+                ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                : 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800'
+            }`}>
+              <Check className="w-3.5 h-3.5 shrink-0" />
               <span>{aiNotification}</span>
             </div>
           )}
