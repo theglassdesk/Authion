@@ -7,6 +7,8 @@ import LZString from 'lz-string';
 import { AISettingsModal } from './modals/AISettingsModal';
 import { htmlToMarkdown, downloadMarkdownFile } from '@/lib/utils';
 
+const ENABLE_EXTERNAL_SHARE = false;
+
 export function TopBar() {
   const { toggleSidebar, activePageId, pages, aiSettings, theme, toggleTheme } = useAppStore();
   const [showShareCopied, setShowShareCopied] = useState(false);
@@ -89,13 +91,15 @@ export function TopBar() {
             </button>
           )}
 
-          <button
-            onClick={handleShare}
-            className="flex items-center space-x-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md text-xs font-medium transition-colors shadow-2xs cursor-pointer"
-          >
-            <Share className="w-3.5 h-3.5" />
-            <span>{showShareCopied ? 'Copied Link!' : 'Share Page'}</span>
-          </button>
+          {ENABLE_EXTERNAL_SHARE && (
+            <button
+              onClick={handleShare}
+              className="flex items-center space-x-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md text-xs font-medium transition-colors shadow-2xs cursor-pointer"
+            >
+              <Share className="w-3.5 h-3.5" />
+              <span>{showShareCopied ? 'Copied Link!' : 'Share Page'}</span>
+            </button>
+          )}
 
           <button 
             onClick={() => setShowAiModal(true)}
